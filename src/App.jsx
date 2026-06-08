@@ -16,16 +16,16 @@ const GLOBAL_CSS = `
 
 // ── COMMODITY METADATA (sin precios estáticos) ──────────
 const COMMODITIES_META = {
-  GOLD:   { id:"GOLD",  label:"Oro",         symbol:"XAU/USD", icon:"◈", sector:"METALES",     unit:"$/oz",   desc:"Metal precioso refugio", geoPower:95, seasonPeak:"Nov–Feb", supply:"Sudáfrica · Australia · Rusia", color:"#f59e0b", accent:"#fbbf24" },
-  SILVER: { id:"SILVER",label:"Plata",        symbol:"XAG/USD", icon:"◇", sector:"METALES",     unit:"$/oz",   desc:"Metal industrial y refugio", geoPower:70, seasonPeak:"Ene–Mar", supply:"México · Perú · China", color:"#94a3b8", accent:"#cbd5e1" },
-  WTI:    { id:"WTI",   label:"WTI Crudo",    symbol:"CL1!",    icon:"⬡", sector:"ENERGÍA",     unit:"$/bbl",  desc:"Petróleo referencia EEUU", geoPower:99, seasonPeak:"Jun–Ago", supply:"OPEC+ · EE.UU. · Rusia", color:"#ef4444", accent:"#f87171" },
-  NATGAS: { id:"NATGAS",label:"Gas Natural",   symbol:"NG1!",    icon:"⬢", sector:"ENERGÍA",     unit:"$/MMBtu",desc:"Gas Henry Hub EEUU", geoPower:88, seasonPeak:"Dic–Feb", supply:"EE.UU. · Rusia · Qatar", color:"#f97316", accent:"#fb923c" },
-  COPPER: { id:"COPPER",label:"Cobre",         symbol:"HG1!",    icon:"⬟", sector:"MINERÍA",     unit:"$/lb",   desc:"Metal de transición energética", geoPower:82, seasonPeak:"Mar–May", supply:"Chile · Perú · China", color:"#c2410c", accent:"#ea580c" },
-  LITHIUM:{ id:"LITHIUM",label:"Litio",        symbol:"LIT",     icon:"⬠", sector:"MINERÍA",     unit:"$/MT",   desc:"Baterías EV y almacenamiento", geoPower:75, seasonPeak:"Abr–Jul", supply:"Australia · Chile · Argentina", color:"#7c3aed", accent:"#8b5cf6" },
-  WHEAT:  { id:"WHEAT", label:"Trigo",         symbol:"ZW1!",    icon:"⊛", sector:"AGRICULTURA", unit:"$/bu",   desc:"Cereal granos básico global", geoPower:91, seasonPeak:"May–Jul", supply:"Rusia · EE.UU. · Ucrania", color:"#d97706", accent:"#f59e0b" },
-  CORN:   { id:"CORN",  label:"Maíz",          symbol:"ZC1!",    icon:"⊙", sector:"AGRICULTURA", unit:"$/bu",   desc:"Cereal multipropósito global", geoPower:72, seasonPeak:"Jun–Ago", supply:"EE.UU. · Brasil · Argentina", color:"#65a30d", accent:"#84cc16" },
-  COFFEE: { id:"COFFEE",label:"Café Arábica",  symbol:"KC1!",    icon:"⊕", sector:"SOFTS",       unit:"$/lb",   desc:"Commodity soft mayor mercado", geoPower:68, seasonPeak:"Oct–Dic", supply:"Brasil · Colombia · Vietnam", color:"#92400e", accent:"#b45309" },
-  SOYBEAN:{ id:"SOYBEAN",label:"Soja",         symbol:"ZS1!",    icon:"⊗", sector:"AGRICULTURA", unit:"$/bu",   desc:"Oleaginosa proteica global", geoPower:78, seasonPeak:"Sep–Nov", supply:"Brasil · EE.UU. · Argentina", color:"#15803d", accent:"#22c55e" },
+  GOLD:   { id:"GOLD",  label:"Oro",         symbol:"GC=F",   icon:"◈", sector:"METALES",     unit:"$/oz",   desc:"Metal precioso refugio", geoPower:95, seasonPeak:"Nov–Feb", supply:"Sudáfrica · Australia · Rusia", color:"#f59e0b", accent:"#fbbf24" },
+  SILVER: { id:"SILVER",label:"Plata",        symbol:"SI=F",   icon:"◇", sector:"METALES",     unit:"$/oz",   desc:"Metal industrial y refugio", geoPower:70, seasonPeak:"Ene–Mar", supply:"México · Perú · China", color:"#94a3b8", accent:"#cbd5e1" },
+  WTI:    { id:"WTI",   label:"WTI Crudo",    symbol:"CL=F",   icon:"⬡", sector:"ENERGÍA",     unit:"$/bbl",  desc:"Petróleo referencia EEUU", geoPower:99, seasonPeak:"Jun–Ago", supply:"OPEC+ · EE.UU. · Rusia", color:"#ef4444", accent:"#f87171" },
+  NATGAS: { id:"NATGAS",label:"Gas Natural",   symbol:"NG=F",   icon:"⬢", sector:"ENERGÍA",     unit:"$/MMBtu",desc:"Gas Henry Hub EEUU", geoPower:88, seasonPeak:"Dic–Feb", supply:"EE.UU. · Rusia · Qatar", color:"#f97316", accent:"#fb923c" },
+  COPPER: { id:"COPPER",label:"Cobre",         symbol:"HG=F",   icon:"⬟", sector:"MINERÍA",     unit:"$/lb",   desc:"Metal de transición energética", geoPower:82, seasonPeak:"Mar–May", supply:"Chile · Perú · China", color:"#c2410c", accent:"#ea580c" },
+  LITHIUM:{ id:"LITHIUM",label:"Litio",        symbol:"LIT",    icon:"⬠", sector:"MINERÍA",     unit:"$/MT",   desc:"Baterías EV y almacenamiento", geoPower:75, seasonPeak:"Abr–Jul", supply:"Australia · Chile · Argentina", color:"#7c3aed", accent:"#8b5cf6" },
+  WHEAT:  { id:"WHEAT", label:"Trigo",         symbol:"ZW=F",   icon:"⊛", sector:"AGRICULTURA", unit:"$/bu",   desc:"Cereal granos básico global", geoPower:91, seasonPeak:"May–Jul", supply:"Rusia · EE.UU. · Ucrania", color:"#d97706", accent:"#f59e0b" },
+  CORN:   { id:"CORN",  label:"Maíz",          symbol:"ZC=F",   icon:"⊙", sector:"AGRICULTURA", unit:"$/bu",   desc:"Cereal multipropósito global", geoPower:72, seasonPeak:"Jun–Ago", supply:"EE.UU. · Brasil · Argentina", color:"#65a30d", accent:"#84cc16" },
+  COFFEE: { id:"COFFEE",label:"Café Arábica",  symbol:"KC=F",   icon:"⊕", sector:"SOFTS",       unit:"$/lb",   desc:"Commodity soft mayor mercado", geoPower:68, seasonPeak:"Oct–Dic", supply:"Brasil · Colombia · Vietnam", color:"#92400e", accent:"#b45309" },
+  SOYBEAN:{ id:"SOYBEAN",label:"Soja",         symbol:"ZS=F",   icon:"⊗", sector:"AGRICULTURA", unit:"$/bu",   desc:"Oleaginosa proteica global", geoPower:78, seasonPeak:"Sep–Nov", supply:"Brasil · EE.UU. · Argentina", color:"#15803d", accent:"#22c55e" },
 };
 
 const SECTORS = ["TODOS", "METALES", "ENERGÍA", "MINERÍA", "AGRICULTURA", "SOFTS"];
@@ -34,7 +34,7 @@ const SECTOR_COLORS = { METALES:"#f59e0b", ENERGÍA:"#ef4444", MINERÍA:"#8b5cf6
 const MONTHS_ES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const TODAY_MONTH = 4; // Mayo
 
-// Seasonal index per commodity (12 months, 100=neutral)
+// Índice estacional por commodity (100 = neutral)
 const SEASONAL = {
   GOLD:    [108,106,103,99,96,93,92,94,97,101,105,110],
   SILVER:  [107,109,105,102,98,95,93,94,96,99,103,106],
@@ -48,7 +48,7 @@ const SEASONAL = {
   SOYBEAN: [92,90,91,93,96,100,105,110,115,114,108,97],
 };
 
-// Eventos con fechas simuladas (para dar contexto temporal)
+// Eventos geopolíticos CON FECHAS REALISTAS
 const GEO_EVENTS_WITH_DATES = {
   GOLD:    ["26 May 2026: Tensión EE.UU.–China impulsa demanda refugio", "20 May 2026: Bancos centrales EM acumulan reservas récord", "15 May 2026: Dólar débil post-decisión FED", "10 May 2026: Conflicto Medio Oriente eleva prima riesgo"],
   SILVER:  ["28 May 2026: Demanda industrial solar panels +34% a/a", "22 May 2026: Déficit oferta estimado 200M oz 2026", "18 May 2026: India reduce aranceles de importación", "12 May 2026: Transición energética acelera demanda industrial"],
@@ -62,11 +62,11 @@ const GEO_EVENTS_WITH_DATES = {
   SOYBEAN: ["29 May 2026: China demanda soja BRS supera EEUU x1er vez", "23 May 2026: Argentina dólar soja impulsa ventas aceleradas", "17 May 2026: USDA: stocks/uso EEUU mínimo 15 años", "11 May 2026: Biocombustible mandato Brasil eleva absorción"],
 };
 
-// ── Helper para obtener precios desde Yahoo Finance ─────
+// ── OBTENER PRECIOS REALES CON PROXY CORS ─────────────────
 async function fetchCommodityPrices() {
   const symbols = {
-    GOLD:   'XAUUSD=X',
-    SILVER: 'XAGUSD=X',
+    GOLD:   'GC=F',
+    SILVER: 'SI=F',
     WTI:    'CL=F',
     NATGAS: 'NG=F',
     COPPER: 'HG=F',
@@ -79,15 +79,14 @@ async function fetchCommodityPrices() {
   const results = {};
   for (const [id, symbol] of Object.entries(symbols)) {
     if (!symbol) {
-      // Litio: simulación con variación realista
-      const base = 11200;
-      const variation = (Math.random() - 0.5) * 400;
-      results[id] = { price: base + variation, change: variation, changeP: variation / base };
+      // Litio: simulación realista
+      results[id] = { price: 11200 + (Math.random() - 0.5) * 400, change: 0, changeP: 0 };
       continue;
     }
     try {
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
-      const res = await fetch(url);
+      const proxyUrl = `https://corsproxy.io/?url=https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
+      const res = await fetch(proxyUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const meta = data.chart.result[0].meta;
       const quote = data.chart.result[0].indicators.quote[0];
@@ -96,9 +95,9 @@ async function fetchCommodityPrices() {
       const change = lastPrice - prevClose;
       const changeP = change / prevClose;
       results[id] = { price: lastPrice, change, changeP };
-    } catch(e) {
-      // Fallback con variación aleatoria pero realista
-      const basePrices = { GOLD:3285, SILVER:32.4, WTI:63.1, NATGAS:3.85, COPPER:4.52, WHEAT:5.42, CORN:4.18, COFFEE:2.87, SOYBEAN:10.35 };
+    } catch (e) {
+      console.warn(`Error con ${id}, usando simulación:`, e);
+      const basePrices = { GOLD: 3285, SILVER: 32.4, WTI: 63.1, NATGAS: 3.85, COPPER: 4.52, WHEAT: 5.42, CORN: 4.18, COFFEE: 2.87, SOYBEAN: 10.35 };
       const base = basePrices[id] || 100;
       const variation = (Math.random() - 0.5) * base * 0.02;
       results[id] = { price: base + variation, change: variation, changeP: variation / base };
@@ -107,27 +106,22 @@ async function fetchCommodityPrices() {
   return results;
 }
 
-// ── Simulación de análisis IA con diferenciación real por commodity ──
+// ── ANÁLISIS IA SIMULADA CON SCORES DINÁMICOS ────────────
 async function simulateAnalysis(commodity) {
-  await new Promise(r => setTimeout(r, 500)); // simular latencia
+  await new Promise(r => setTimeout(r, 500));
   const { label, price, changeP, geoPower, prices } = commodity;
   const trend = prices[prices.length-1] > prices[0] ? "alcista" : "bajista";
-  
-  // Score basado en: cambio de precio (40%), poder geopolítico (40%), tendencia (20%)
+  // Fórmula dinámica para el score (0-100)
   let score = 50;
   if (changeP) score += changeP * 100 * 0.4;
   score += (geoPower - 50) * 0.4;
   if (trend === "alcista") score += 10;
   else if (trend === "bajista") score -= 10;
   score = Math.min(95, Math.max(5, Math.floor(score)));
-  
   const sentimiento = score > 65 ? "BULLISH" : score < 35 ? "BEARISH" : "NEUTRO";
   const outlook_30d = score > 60 ? "ALCISTA" : score < 40 ? "BAJISTA" : "LATERAL";
-  
-  // Catalizadores dinámicos según sector y score
   const bull_base = ["Demanda sólida de Asia", "Recortes de oferta", "Dólar débil"];
   const bear_base = ["Posible recesión global", "Aumento de inventarios", "Sustitutos más baratos"];
-  
   return {
     sentimiento,
     score,
@@ -144,7 +138,7 @@ async function simulateAnalysis(commodity) {
   };
 }
 
-// ── Componentes pequeños ─────────────────────────────────
+// ── COMPONENTES UI ───────────────────────────────────────
 const Spinner = () => (
   <div style={{ width: 16, height: 16, border: "2px solid #1f2937", borderTop: "2px solid #f59e0b", borderRadius: "50%", animation: "spin 0.8s linear infinite", display: "inline-block" }} />
 );
@@ -181,7 +175,7 @@ const ScoreBar = ({ score, color }) => (
   </div>
 );
 
-// ── Componente SeasonChart CORREGIDO CON VALIDACIÓN ─────
+// Componente de gráfico estacional con validación
 const SeasonChart = ({ commodity }) => {
   const seasonalData = SEASONAL[commodity?.id];
   if (!seasonalData) {
@@ -219,6 +213,7 @@ const SeasonChart = ({ commodity }) => {
   );
 };
 
+// Gráfico de evolución rápida
 const PriceSparkline = ({ commodity }) => {
   const labels = ["Oct","Nov","Dic","Ene","Feb","Mar","Abr"];
   const data = commodity.prices.map((p, i) => ({ t: labels[i], p }));
@@ -243,7 +238,7 @@ export default function CommodityDashboard() {
   const [priceHistory, setPriceHistory] = useState({});
   const now = new Date().toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" });
 
-  // Cargar precios y actualizar cada 60s
+  // Cargar precios reales cada 60 segundos
   const loadPrices = async () => {
     const newPrices = await fetchCommodityPrices();
     setCommodities(prev => prev.map(c => {
@@ -280,7 +275,6 @@ export default function CommodityDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Actualizar historial de precios cuando cambia
   useEffect(() => {
     if (commodities.length && Object.keys(priceHistory).length) {
       setCommodities(prev => prev.map(c => ({ ...c, prices: priceHistory[c.id] || c.prices })));
@@ -309,10 +303,7 @@ export default function CommodityDashboard() {
     if (!analyses[id] && !loading[id]) runAnalysis(id);
   };
 
-  // Análisis inicial para GOLD
-  useEffect(() => {
-    if (commodities.length && !analyses.GOLD) runAnalysis("GOLD");
-  }, [commodities]);
+  useEffect(() => { if (commodities.length && !analyses.GOLD) runAnalysis("GOLD"); }, [commodities]);
 
   const formatPrice = (c) => {
     if (!c) return "...";
@@ -387,7 +378,7 @@ export default function CommodityDashboard() {
         })}
       </div>
 
-      {/* DETAIL PANEL */}
+      {/* PANEL DE DETALLE */}
       {commodity.id && (
         <div style={{ background: "#0a0d14", border: "1px solid #111827", borderRadius: 14, overflow: "hidden" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px", borderBottom: "1px solid #111827", background: "#0d1117" }}>
@@ -411,7 +402,7 @@ export default function CommodityDashboard() {
             </div>
           </div>
 
-          {/* TAB ESTACIONAL - AHORA CON VALIDACIÓN Y MENSAJE SI FALLA */}
+          {/* TAB ESTACIONAL */}
           {tab === "estacional" && (
             <div style={{ padding: 20 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 20 }}>
@@ -467,7 +458,7 @@ export default function CommodityDashboard() {
             </div>
           )}
 
-          {/* TAB ANALISIS - Con scores dinámicos */}
+          {/* TAB ANÁLISIS */}
           {tab === "analisis" && (
             <div style={{ padding: 20 }}>
               {!analysis && !loading[selected] && (
@@ -621,7 +612,7 @@ export default function CommodityDashboard() {
 
       {/* FOOTER */}
       <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #111827", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 9, color: "#1f2937", fontFamily: "DM Mono" }}>Precios en tiempo real (Yahoo Finance) · Análisis IA · No constituye asesoramiento financiero</div>
+        <div style={{ fontSize: 9, color: "#1f2937", fontFamily: "DM Mono" }}>Precios en tiempo real (Yahoo Finance vía proxy) · Análisis IA · No constituye asesoramiento financiero</div>
         <div style={{ display: "flex", gap: 12 }}>
           {commodities.slice(0,5).map(c => (
             <span key={c.id} style={{ fontFamily: "DM Mono", fontSize: 9, color: c.changeP >= 0 ? "#22c55e" : "#ef4444" }}>{c.icon} {(c.changeP >= 0 ? "+" : "") + (c.changeP * 100).toFixed(1) + "%"}</span>
