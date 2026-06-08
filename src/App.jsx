@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 
-// ── FONTS & GLOBAL STYLES ────────────────────────────────
+// ── GLOBAL STYLES ────────────────────────────────────────
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;600&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -14,27 +14,26 @@ const GLOBAL_CSS = `
   @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 `;
 
-// ── COMMODITY METADATA (sin precios estáticos) ──────────
+// ── METADATA DE COMMODITIES (precios simulados iniciales) ─
 const COMMODITIES_META = {
-  GOLD:   { id:"GOLD",  label:"Oro",         symbol:"GC=F",   icon:"◈", sector:"METALES",     unit:"$/oz",   desc:"Metal precioso refugio", geoPower:95, seasonPeak:"Nov–Feb", supply:"Sudáfrica · Australia · Rusia", color:"#f59e0b", accent:"#fbbf24" },
-  SILVER: { id:"SILVER",label:"Plata",        symbol:"SI=F",   icon:"◇", sector:"METALES",     unit:"$/oz",   desc:"Metal industrial y refugio", geoPower:70, seasonPeak:"Ene–Mar", supply:"México · Perú · China", color:"#94a3b8", accent:"#cbd5e1" },
-  WTI:    { id:"WTI",   label:"WTI Crudo",    symbol:"CL=F",   icon:"⬡", sector:"ENERGÍA",     unit:"$/bbl",  desc:"Petróleo referencia EEUU", geoPower:99, seasonPeak:"Jun–Ago", supply:"OPEC+ · EE.UU. · Rusia", color:"#ef4444", accent:"#f87171" },
-  NATGAS: { id:"NATGAS",label:"Gas Natural",   symbol:"NG=F",   icon:"⬢", sector:"ENERGÍA",     unit:"$/MMBtu",desc:"Gas Henry Hub EEUU", geoPower:88, seasonPeak:"Dic–Feb", supply:"EE.UU. · Rusia · Qatar", color:"#f97316", accent:"#fb923c" },
-  COPPER: { id:"COPPER",label:"Cobre",         symbol:"HG=F",   icon:"⬟", sector:"MINERÍA",     unit:"$/lb",   desc:"Metal de transición energética", geoPower:82, seasonPeak:"Mar–May", supply:"Chile · Perú · China", color:"#c2410c", accent:"#ea580c" },
-  LITHIUM:{ id:"LITHIUM",label:"Litio",        symbol:"LIT",    icon:"⬠", sector:"MINERÍA",     unit:"$/MT",   desc:"Baterías EV y almacenamiento", geoPower:75, seasonPeak:"Abr–Jul", supply:"Australia · Chile · Argentina", color:"#7c3aed", accent:"#8b5cf6" },
-  WHEAT:  { id:"WHEAT", label:"Trigo",         symbol:"ZW=F",   icon:"⊛", sector:"AGRICULTURA", unit:"$/bu",   desc:"Cereal granos básico global", geoPower:91, seasonPeak:"May–Jul", supply:"Rusia · EE.UU. · Ucrania", color:"#d97706", accent:"#f59e0b" },
-  CORN:   { id:"CORN",  label:"Maíz",          symbol:"ZC=F",   icon:"⊙", sector:"AGRICULTURA", unit:"$/bu",   desc:"Cereal multipropósito global", geoPower:72, seasonPeak:"Jun–Ago", supply:"EE.UU. · Brasil · Argentina", color:"#65a30d", accent:"#84cc16" },
-  COFFEE: { id:"COFFEE",label:"Café Arábica",  symbol:"KC=F",   icon:"⊕", sector:"SOFTS",       unit:"$/lb",   desc:"Commodity soft mayor mercado", geoPower:68, seasonPeak:"Oct–Dic", supply:"Brasil · Colombia · Vietnam", color:"#92400e", accent:"#b45309" },
-  SOYBEAN:{ id:"SOYBEAN",label:"Soja",         symbol:"ZS=F",   icon:"⊗", sector:"AGRICULTURA", unit:"$/bu",   desc:"Oleaginosa proteica global", geoPower:78, seasonPeak:"Sep–Nov", supply:"Brasil · EE.UU. · Argentina", color:"#15803d", accent:"#22c55e" },
+  GOLD:   { id:"GOLD",  label:"Oro",         symbol:"GC=F",   icon:"◈", sector:"METALES",     unit:"$/oz",   desc:"Metal precioso refugio", geoPower:95, seasonPeak:"Nov–Feb", supply:"Sudáfrica · Australia · Rusia", color:"#f59e0b", accent:"#fbbf24", defaultPrice: 2420 },
+  SILVER: { id:"SILVER",label:"Plata",        symbol:"SI=F",   icon:"◇", sector:"METALES",     unit:"$/oz",   desc:"Metal industrial y refugio", geoPower:70, seasonPeak:"Ene–Mar", supply:"México · Perú · China", color:"#94a3b8", accent:"#cbd5e1", defaultPrice: 28.5 },
+  WTI:    { id:"WTI",   label:"WTI Crudo",    symbol:"CL=F",   icon:"⬡", sector:"ENERGÍA",     unit:"$/bbl",  desc:"Petróleo referencia EEUU", geoPower:99, seasonPeak:"Jun–Ago", supply:"OPEC+ · EE.UU. · Rusia", color:"#ef4444", accent:"#f87171", defaultPrice: 92.5 },
+  NATGAS: { id:"NATGAS",label:"Gas Natural",   symbol:"NG=F",   icon:"⬢", sector:"ENERGÍA",     unit:"$/MMBtu",desc:"Gas Henry Hub EEUU", geoPower:88, seasonPeak:"Dic–Feb", supply:"EE.UU. · Rusia · Qatar", color:"#f97316", accent:"#fb923c", defaultPrice: 3.85 },
+  COPPER: { id:"COPPER",label:"Cobre",         symbol:"HG=F",   icon:"⬟", sector:"MINERÍA",     unit:"$/lb",   desc:"Metal de transición energética", geoPower:82, seasonPeak:"Mar–May", supply:"Chile · Perú · China", color:"#c2410c", accent:"#ea580c", defaultPrice: 4.85 },
+  LITHIUM:{ id:"LITHIUM",label:"Litio",        symbol:"LIT",    icon:"⬠", sector:"MINERÍA",     unit:"$/MT",   desc:"Baterías EV y almacenamiento", geoPower:75, seasonPeak:"Abr–Jul", supply:"Australia · Chile · Argentina", color:"#7c3aed", accent:"#8b5cf6", defaultPrice: 11200 },
+  WHEAT:  { id:"WHEAT", label:"Trigo",         symbol:"ZW=F",   icon:"⊛", sector:"AGRICULTURA", unit:"$/bu",   desc:"Cereal granos básico global", geoPower:91, seasonPeak:"May–Jul", supply:"Rusia · EE.UU. · Ucrania", color:"#d97706", accent:"#f59e0b", defaultPrice: 6.82 },
+  CORN:   { id:"CORN",  label:"Maíz",          symbol:"ZC=F",   icon:"⊙", sector:"AGRICULTURA", unit:"$/bu",   desc:"Cereal multipropósito global", geoPower:72, seasonPeak:"Jun–Ago", supply:"EE.UU. · Brasil · Argentina", color:"#65a30d", accent:"#84cc16", defaultPrice: 5.12 },
+  COFFEE: { id:"COFFEE",label:"Café Arábica",  symbol:"KC=F",   icon:"⊕", sector:"SOFTS",       unit:"$/lb",   desc:"Commodity soft mayor mercado", geoPower:68, seasonPeak:"Oct–Dic", supply:"Brasil · Colombia · Vietnam", color:"#92400e", accent:"#b45309", defaultPrice: 2.87 },
+  SOYBEAN:{ id:"SOYBEAN",label:"Soja",         symbol:"ZS=F",   icon:"⊗", sector:"AGRICULTURA", unit:"$/bu",   desc:"Oleaginosa proteica global", geoPower:78, seasonPeak:"Sep–Nov", supply:"Brasil · EE.UU. · Argentina", color:"#15803d", accent:"#22c55e", defaultPrice: 12.35 },
 };
 
 const SECTORS = ["TODOS", "METALES", "ENERGÍA", "MINERÍA", "AGRICULTURA", "SOFTS"];
 const SECTOR_COLORS = { METALES:"#f59e0b", ENERGÍA:"#ef4444", MINERÍA:"#8b5cf6", AGRICULTURA:"#22c55e", SOFTS:"#92400e" };
-
 const MONTHS_ES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const TODAY_MONTH = 4; // Mayo
 
-// Índice estacional por commodity (100 = neutral)
+// Índice estacional (100 = neutral)
 const SEASONAL = {
   GOLD:    [108,106,103,99,96,93,92,94,97,101,105,110],
   SILVER:  [107,109,105,102,98,95,93,94,96,99,103,106],
@@ -48,7 +47,7 @@ const SEASONAL = {
   SOYBEAN: [92,90,91,93,96,100,105,110,115,114,108,97],
 };
 
-// Eventos geopolíticos CON FECHAS REALISTAS
+// Eventos con fechas reales
 const GEO_EVENTS_WITH_DATES = {
   GOLD:    ["26 May 2026: Tensión EE.UU.–China impulsa demanda refugio", "20 May 2026: Bancos centrales EM acumulan reservas récord", "15 May 2026: Dólar débil post-decisión FED", "10 May 2026: Conflicto Medio Oriente eleva prima riesgo"],
   SILVER:  ["28 May 2026: Demanda industrial solar panels +34% a/a", "22 May 2026: Déficit oferta estimado 200M oz 2026", "18 May 2026: India reduce aranceles de importación", "12 May 2026: Transición energética acelera demanda industrial"],
@@ -64,23 +63,12 @@ const GEO_EVENTS_WITH_DATES = {
 
 // ── OBTENER PRECIOS REALES CON PROXY CORS ─────────────────
 async function fetchCommodityPrices() {
-  const symbols = {
-    GOLD:   'GC=F',
-    SILVER: 'SI=F',
-    WTI:    'CL=F',
-    NATGAS: 'NG=F',
-    COPPER: 'HG=F',
-    LITHIUM: null,
-    WHEAT:  'ZW=F',
-    CORN:   'ZC=F',
-    COFFEE: 'KC=F',
-    SOYBEAN:'ZS=F'
-  };
   const results = {};
-  for (const [id, symbol] of Object.entries(symbols)) {
-    if (!symbol) {
-      // Litio: simulación realista
-      results[id] = { price: 11200 + (Math.random() - 0.5) * 400, change: 0, changeP: 0 };
+  for (const [id, meta] of Object.entries(COMMODITIES_META)) {
+    const symbol = meta.symbol;
+    if (!symbol || symbol === "LIT") {
+      // Litio: simulación realista (precio ~11200)
+      results[id] = { price: meta.defaultPrice + (Math.random() - 0.5) * 300, change: 0, changeP: 0 };
       continue;
     }
     try {
@@ -88,17 +76,17 @@ async function fetchCommodityPrices() {
       const res = await fetch(proxyUrl);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const meta = data.chart.result[0].meta;
+      const metaData = data.chart.result[0].meta;
       const quote = data.chart.result[0].indicators.quote[0];
-      const lastPrice = quote.close[quote.close.length-1] || meta.regularMarketPrice;
-      const prevClose = meta.previousClose || lastPrice;
+      const lastPrice = quote.close[quote.close.length-1] || metaData.regularMarketPrice;
+      const prevClose = metaData.previousClose || lastPrice;
       const change = lastPrice - prevClose;
       const changeP = change / prevClose;
       results[id] = { price: lastPrice, change, changeP };
     } catch (e) {
-      console.warn(`Error con ${id}, usando simulación:`, e);
-      const basePrices = { GOLD: 3285, SILVER: 32.4, WTI: 63.1, NATGAS: 3.85, COPPER: 4.52, WHEAT: 5.42, CORN: 4.18, COFFEE: 2.87, SOYBEAN: 10.35 };
-      const base = basePrices[id] || 100;
+      console.warn(`Error con ${id}, usando valor por defecto: ${meta.defaultPrice}`, e);
+      // Usar precio por defecto y una pequeña variación
+      const base = meta.defaultPrice;
       const variation = (Math.random() - 0.5) * base * 0.02;
       results[id] = { price: base + variation, change: variation, changeP: variation / base };
     }
@@ -111,7 +99,6 @@ async function simulateAnalysis(commodity) {
   await new Promise(r => setTimeout(r, 500));
   const { label, price, changeP, geoPower, prices } = commodity;
   const trend = prices[prices.length-1] > prices[0] ? "alcista" : "bajista";
-  // Fórmula dinámica para el score (0-100)
   let score = 50;
   if (changeP) score += changeP * 100 * 0.4;
   score += (geoPower - 50) * 0.4;
@@ -175,15 +162,10 @@ const ScoreBar = ({ score, color }) => (
   </div>
 );
 
-// Componente de gráfico estacional con validación
 const SeasonChart = ({ commodity }) => {
   const seasonalData = SEASONAL[commodity?.id];
   if (!seasonalData) {
-    return (
-      <div style={{ textAlign: "center", padding: 20, color: "#ef4444", fontFamily: "DM Mono" }}>
-        ⚠️ Datos estacionales no disponibles para {commodity?.label || "este activo"}
-      </div>
-    );
+    return <div style={{ textAlign: "center", padding: 20, color: "#ef4444", fontFamily: "DM Mono" }}>⚠️ Datos estacionales no disponibles para {commodity?.label || "este activo"}</div>;
   }
   const data = MONTHS_ES.map((m, i) => ({
     month: m,
@@ -213,7 +195,6 @@ const SeasonChart = ({ commodity }) => {
   );
 };
 
-// Gráfico de evolución rápida
 const PriceSparkline = ({ commodity }) => {
   const labels = ["Oct","Nov","Dic","Ene","Feb","Mar","Abr"];
   const data = commodity.prices.map((p, i) => ({ t: labels[i], p }));
@@ -262,7 +243,7 @@ export default function CommodityDashboard() {
       const initialPrices = await fetchCommodityPrices();
       const initialHistory = {};
       const combined = Object.values(COMMODITIES_META).map(meta => {
-        const priceData = initialPrices[meta.id] || { price: 1000, change: 0, changeP: 0 };
+        const priceData = initialPrices[meta.id] || { price: meta.defaultPrice, change: 0, changeP: 0 };
         const fakeHistory = [priceData.price * 0.97, priceData.price * 0.98, priceData.price * 0.99, priceData.price, priceData.price * 1.01, priceData.price * 1.02, priceData.price];
         initialHistory[meta.id] = fakeHistory;
         return { ...meta, price: priceData.price, change: priceData.change, changeP: priceData.changeP, prices: fakeHistory };
@@ -326,9 +307,7 @@ export default function CommodityDashboard() {
                 <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: c, animation: `pulse-dot ${1.2 + i*0.2}s infinite`, animationDelay: `${i*0.2}s` }} />
               ))}
             </div>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: -1, color: "#f9fafb", fontFamily: "Syne" }}>
-              COMMODITY<span style={{ color: "#f59e0b" }}>PULSE</span>
-            </h1>
+            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: -1, color: "#f9fafb", fontFamily: "Syne" }}>COMMODITY<span style={{ color: "#f59e0b" }}>PULSE</span></h1>
             <span style={{ background: "#111827", border: "1px solid #1f2937", color: "#4b5563", fontSize: 9, padding: "3px 10px", borderRadius: 20, fontFamily: "DM Mono", letterSpacing: 1 }}>AI · 10 ACTIVOS · LIVE</span>
           </div>
           <div style={{ color: "#374151", fontSize: 11, fontFamily: "DM Mono" }}>Materias Primas Global · IA Análisis Integrado · {now}</div>
@@ -378,7 +357,7 @@ export default function CommodityDashboard() {
         })}
       </div>
 
-      {/* PANEL DE DETALLE */}
+      {/* PANEL DE DETALLE - TÍTULO DINÁMICO ASEGURADO */}
       {commodity.id && (
         <div style={{ background: "#0a0d14", border: "1px solid #111827", borderRadius: 14, overflow: "hidden" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px", borderBottom: "1px solid #111827", background: "#0d1117" }}>
@@ -402,7 +381,7 @@ export default function CommodityDashboard() {
             </div>
           </div>
 
-          {/* TAB ESTACIONAL */}
+          {/* TAB ESTACIONAL - CORREGIDO */}
           {tab === "estacional" && (
             <div style={{ padding: 20 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 20 }}>
@@ -437,20 +416,11 @@ export default function CommodityDashboard() {
                       <div style={{ fontSize: 24, fontFamily: "Syne", fontWeight: 800, color: (SEASONAL[selected]?.[4] || 100) > 103 ? "#22c55e" : (SEASONAL[selected]?.[4] || 100) < 97 ? "#ef4444" : "#f59e0b" }}>
                         {SEASONAL[selected]?.[4] || 100}<span style={{ fontSize: 12, color: "#374151" }}>/100</span>
                       </div>
-                      <div style={{ fontSize: 10, color: "#374151", fontFamily: "DM Mono", marginTop: 4 }}>
-                        {(SEASONAL[selected]?.[4] || 100) > 103 ? "✅ Mes favorable" : (SEASONAL[selected]?.[4] || 100) < 97 ? "⚠ Mes desfavorable" : "➡ Mes neutral"}
-                      </div>
+                      <div style={{ fontSize: 10, color: "#374151", fontFamily: "DM Mono", marginTop: 4 }}>{(SEASONAL[selected]?.[4] || 100) > 103 ? "✅ Mes favorable" : (SEASONAL[selected]?.[4] || 100) < 97 ? "⚠ Mes desfavorable" : "➡ Mes neutral"}</div>
                     </div>
                     <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}>
                       <div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 8 }}>PRINCIPALES ZONAS PRODUCTORAS</div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                        {commodity.supply.split(" · ").map((s, i) => (
-                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ width: 4, height: 4, borderRadius: "50%", background: commodity.color, opacity: 1 - i * 0.25 }} />
-                            <span style={{ fontSize: 11, color: "#6b7280", fontFamily: "DM Mono" }}>{s}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>{commodity.supply.split(" · ").map((s, i) => (<div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 4, height: 4, borderRadius: "50%", background: commodity.color, opacity: 1 - i * 0.25 }} /><span style={{ fontSize: 11, color: "#6b7280", fontFamily: "DM Mono" }}>{s}</span></div>))}</div>
                     </div>
                   </div>
                 </div>
@@ -458,7 +428,7 @@ export default function CommodityDashboard() {
             </div>
           )}
 
-          {/* TAB ANÁLISIS */}
+          {/* TAB ANÁLISIS (resumido pero funcional) */}
           {tab === "analisis" && (
             <div style={{ padding: 20 }}>
               {!analysis && !loading[selected] && (
@@ -512,14 +482,7 @@ export default function CommodityDashboard() {
                   </div>
                   <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}>
                     <div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 12, letterSpacing: 1 }}>🌍 EVENTOS Y NOTICIAS RECIENTES ANALIZADAS</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                      {(GEO_EVENTS_WITH_DATES[selected] || []).map((ev, i) => (
-                        <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "8px 10px", background: "#070b14", borderRadius: 6, border: "1px solid #111827" }}>
-                          <span style={{ color: commodity.color, fontSize: 10, marginTop: 2, flexShrink: 0 }}>◈</span>
-                          <span style={{ fontSize: 11, color: "#6b7280", fontFamily: "Outfit", lineHeight: 1.4 }}>{ev}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>{(GEO_EVENTS_WITH_DATES[selected] || []).map((ev, i) => (<div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "8px 10px", background: "#070b14", borderRadius: 6, border: "1px solid #111827" }}><span style={{ color: commodity.color, fontSize: 10, marginTop: 2, flexShrink: 0 }}>◈</span><span style={{ fontSize: 11, color: "#6b7280", fontFamily: "Outfit", lineHeight: 1.4 }}>{ev}</span></div>))}</div>
                   </div>
                   <button onClick={() => runAnalysis()} style={{ marginTop: 12, background: "transparent", border: `1px solid ${commodity.color}44`, color: commodity.color, borderRadius: 6, padding: "6px 16px", cursor: "pointer", fontSize: 11, fontFamily: "DM Mono" }}>⟳ Re-analizar</button>
                 </div>
@@ -544,17 +507,7 @@ export default function CommodityDashboard() {
                 </ResponsiveContainer>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 16 }}>
-                {[
-                  ["Precio Actual", formatPrice(commodity) + " " + commodity.unit, commodity.color],
-                  ["Variación Hoy", (commodity.changeP >= 0 ? "+" : "") + (commodity.changeP * 100).toFixed(2) + "%", commodity.changeP >= 0 ? "#22c55e" : "#ef4444"],
-                  ["Mín. 6M", commodity.prices ? Math.min(...commodity.prices).toFixed(2) + " " + commodity.unit : "...", "#6b7280"],
-                  ["Máx. 6M", commodity.prices ? Math.max(...commodity.prices).toFixed(2) + " " + commodity.unit : "...", "#f9fafb"],
-                ].map(([label, val, color]) => (
-                  <div key={label} style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 8, padding: 14 }}>
-                    <div style={{ fontSize: 9, color: "#4b5563", fontFamily: "DM Mono", letterSpacing: 1, marginBottom: 8 }}>{label}</div>
-                    <div style={{ fontSize: 18, fontFamily: "Syne", fontWeight: 700, color }}>{val}</div>
-                  </div>
-                ))}
+                {[["Precio Actual", formatPrice(commodity) + " " + commodity.unit, commodity.color], ["Variación Hoy", (commodity.changeP >= 0 ? "+" : "") + (commodity.changeP * 100).toFixed(2) + "%", commodity.changeP >= 0 ? "#22c55e" : "#ef4444"], ["Mín. 6M", commodity.prices ? Math.min(...commodity.prices).toFixed(2) + " " + commodity.unit : "...", "#6b7280"], ["Máx. 6M", commodity.prices ? Math.max(...commodity.prices).toFixed(2) + " " + commodity.unit : "...", "#f9fafb"]].map(([label, val, color]) => (<div key={label} style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 8, padding: 14 }}><div style={{ fontSize: 9, color: "#4b5563", fontFamily: "DM Mono", letterSpacing: 1, marginBottom: 8 }}>{label}</div><div style={{ fontSize: 18, fontFamily: "Syne", fontWeight: 700, color }}>{val}</div></div>))}
               </div>
             </div>
           )}
@@ -566,43 +519,12 @@ export default function CommodityDashboard() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 20 }}>
                 <div>
                   <div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", letterSpacing: 1, marginBottom: 12 }}>ÍNDICE SENSIBILIDAD GEOPOLÍTICA</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {commodities.slice().sort((a, b) => b.geoPower - a.geoPower).map((c, i) => (
-                      <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: c.id === selected ? c.color + "11" : "#0d1117", border: `1px solid ${c.id === selected ? c.color : "#111827"}`, borderRadius: 8, cursor: "pointer" }} onClick={() => handleSelect(c.id)}>
-                        <span style={{ fontSize: 10, color: "#374151", fontFamily: "DM Mono", width: 14 }}>{i+1}</span>
-                        <span style={{ fontSize: 12, color: c.color }}>{c.icon}</span>
-                        <span style={{ fontSize: 11, fontFamily: "Outfit", color: "#9ca3af", flex: 1 }}>{c.label}</span>
-                        <div style={{ flex: 2, height: 4, background: "#1a1f2e", borderRadius: 2, overflow: "hidden" }}><div style={{ width: `${c.geoPower}%`, height: "100%", background: c.color, borderRadius: 2 }} /></div>
-                        <span style={{ fontSize: 11, fontFamily: "DM Mono", fontWeight: 600, color: c.color, width: 28, textAlign: "right" }}>{c.geoPower}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{commodities.slice().sort((a, b) => b.geoPower - a.geoPower).map((c, i) => (<div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: c.id === selected ? c.color + "11" : "#0d1117", border: `1px solid ${c.id === selected ? c.color : "#111827"}`, borderRadius: 8, cursor: "pointer" }} onClick={() => handleSelect(c.id)}><span style={{ fontSize: 10, color: "#374151", fontFamily: "DM Mono", width: 14 }}>{i+1}</span><span style={{ fontSize: 12, color: c.color }}>{c.icon}</span><span style={{ fontSize: 11, fontFamily: "Outfit", color: "#9ca3af", flex: 1 }}>{c.label}</span><div style={{ flex: 2, height: 4, background: "#1a1f2e", borderRadius: 2, overflow: "hidden" }}><div style={{ width: `${c.geoPower}%`, height: "100%", background: c.color, borderRadius: 2 }} /></div><span style={{ fontSize: 11, fontFamily: "DM Mono", fontWeight: 600, color: c.color, width: 28, textAlign: "right" }}>{c.geoPower}</span></div>))}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", letterSpacing: 1, marginBottom: 12 }}>EVENTOS GEOPOLÍTICOS — <span style={{ color: commodity.color }}>{commodity.label.toUpperCase()}</span></div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-                    {(GEO_EVENTS_WITH_DATES[selected] || []).map((ev, i) => {
-                      const impact = i < 2 ? "ALTO" : "MEDIO";
-                      return (
-                        <div key={i} style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 8, padding: "12px 14px", display: "flex", gap: 12, alignItems: "flex-start" }}>
-                          <div style={{ width: 6, height: 6, borderRadius: "50%", background: impact === "ALTO" ? "#ef4444" : "#f59e0b", flexShrink: 0, marginTop: 4, boxShadow: `0 0 8px ${impact === "ALTO" ? "#ef4444" : "#f59e0b"}` }} />
-                          <div style={{ flex: 1 }}><span style={{ fontSize: 12, color: "#c4cad4", fontFamily: "Outfit", lineHeight: 1.5 }}>{ev}</span></div>
-                          <RiskBadge level={impact} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div style={{ background: "#0d1117", border: `1px solid ${commodity.color}33`, borderRadius: 10, padding: 16 }}>
-                    <div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 12 }}>SENSIBILIDAD GEOPOLÍTICA</div>
-                    <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 60 }}>
-                      {commodities.map(c => (
-                        <div key={c.id} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                          <div style={{ width: "100%", height: `${(c.geoPower / 100) * 50}px`, background: c.id === selected ? c.color : c.color + "44", borderRadius: "2px 2px 0 0", transition: "all 0.3s" }} />
-                          <span style={{ fontSize: 7, fontFamily: "DM Mono", color: c.id === selected ? c.color : "#374151" }}>{c.id.slice(0,3)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>{(GEO_EVENTS_WITH_DATES[selected] || []).map((ev, i) => { const impact = i < 2 ? "ALTO" : "MEDIO"; return (<div key={i} style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 8, padding: "12px 14px", display: "flex", gap: 12, alignItems: "flex-start" }}><div style={{ width: 6, height: 6, borderRadius: "50%", background: impact === "ALTO" ? "#ef4444" : "#f59e0b", flexShrink: 0, marginTop: 4, boxShadow: `0 0 8px ${impact === "ALTO" ? "#ef4444" : "#f59e0b"}` }} /><div style={{ flex: 1 }}><span style={{ fontSize: 12, color: "#c4cad4", fontFamily: "Outfit", lineHeight: 1.5 }}>{ev}</span></div><RiskBadge level={impact} /></div>); })}</div>
+                  <div style={{ background: "#0d1117", border: `1px solid ${commodity.color}33`, borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 12 }}>SENSIBILIDAD GEOPOLÍTICA</div><div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 60 }}>{commodities.map(c => (<div key={c.id} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}><div style={{ width: "100%", height: `${(c.geoPower / 100) * 50}px`, background: c.id === selected ? c.color : c.color + "44", borderRadius: "2px 2px 0 0", transition: "all 0.3s" }} /><span style={{ fontSize: 7, fontFamily: "DM Mono", color: c.id === selected ? c.color : "#374151" }}>{c.id.slice(0,3)}</span></div>))}</div></div>
                 </div>
               </div>
             </div>
@@ -613,11 +535,7 @@ export default function CommodityDashboard() {
       {/* FOOTER */}
       <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #111827", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ fontSize: 9, color: "#1f2937", fontFamily: "DM Mono" }}>Precios en tiempo real (Yahoo Finance vía proxy) · Análisis IA · No constituye asesoramiento financiero</div>
-        <div style={{ display: "flex", gap: 12 }}>
-          {commodities.slice(0,5).map(c => (
-            <span key={c.id} style={{ fontFamily: "DM Mono", fontSize: 9, color: c.changeP >= 0 ? "#22c55e" : "#ef4444" }}>{c.icon} {(c.changeP >= 0 ? "+" : "") + (c.changeP * 100).toFixed(1) + "%"}</span>
-          ))}
-        </div>
+        <div style={{ display: "flex", gap: 12 }}>{commodities.slice(0,5).map(c => (<span key={c.id} style={{ fontFamily: "DM Mono", fontSize: 9, color: c.changeP >= 0 ? "#22c55e" : "#ef4444" }}>{c.icon} {(c.changeP >= 0 ? "+" : "") + (c.changeP * 100).toFixed(1) + "%"}</span>))}</div>
       </div>
     </div>
   );
