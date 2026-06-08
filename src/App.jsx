@@ -20,16 +20,16 @@ const GLOBAL_CSS = `
 // DATOS MAESTROS (con precios actualizados a junio 2026)
 // ============================================================
 const COMMODITIES_MASTER = {
-  GOLD:   { id:"GOLD",  label:"Oro",         symbol:"XAU/USD", icon:"◈", sector:"METALES",     unit:"$/oz",   desc:"Metal precioso refugio", geoPower:95, seasonPeak:"Nov–Feb", supply:"Sudáfrica · Australia · Rusia", color:"#f59e0b", defaultPrice: 2420 },
-  SILVER: { id:"SILVER",label:"Plata",        symbol:"XAG/USD", icon:"◇", sector:"METALES",     unit:"$/oz",   desc:"Metal industrial y refugio", geoPower:70, seasonPeak:"Ene–Mar", supply:"México · Perú · China", color:"#94a3b8", defaultPrice: 28.5 },
-  WTI:    { id:"WTI",   label:"WTI Crudo",    symbol:"CL=F",    icon:"⬡", sector:"ENERGÍA",     unit:"$/bbl",  desc:"Petróleo referencia EEUU", geoPower:99, seasonPeak:"Jun–Ago", supply:"OPEC+ · EE.UU. · Rusia", color:"#ef4444", defaultPrice: 92.5 },
-  NATGAS: { id:"NATGAS",label:"Gas Natural",   symbol:"NG=F",    icon:"⬢", sector:"ENERGÍA",     unit:"$/MMBtu",desc:"Gas Henry Hub EEUU", geoPower:88, seasonPeak:"Dic–Feb", supply:"EE.UU. · Rusia · Qatar", color:"#f97316", defaultPrice: 3.85 },
-  COPPER: { id:"COPPER",label:"Cobre",         symbol:"HG=F",    icon:"⬟", sector:"MINERÍA",     unit:"$/lb",   desc:"Metal de transición energética", geoPower:82, seasonPeak:"Mar–May", supply:"Chile · Perú · China", color:"#c2410c", defaultPrice: 4.85 },
+  GOLD:   { id:"GOLD",  label:"Oro",         symbol:"XAU/USD", icon:"◈", sector:"METALES",     unit:"$/oz",   desc:"Metal precioso refugio", geoPower:95, seasonPeak:"Nov–Feb", supply:"Sudáfrica · Australia · Rusia", color:"#f59e0b", defaultPrice: 4320 },
+  SILVER: { id:"SILVER",label:"Plata",        symbol:"XAG/USD", icon:"◇", sector:"METALES",     unit:"$/oz",   desc:"Metal industrial y refugio", geoPower:70, seasonPeak:"Ene–Mar", supply:"México · Perú · China", color:"#94a3b8", defaultPrice: 67.5 },
+  WTI:    { id:"WTI",   label:"WTI Crudo",    symbol:"CL=F",    icon:"⬡", sector:"ENERGÍA",     unit:"$/bbl",  desc:"Petróleo referencia EEUU", geoPower:99, seasonPeak:"Jun–Ago", supply:"OPEC+ · EE.UU. · Rusia", color:"#ef4444", defaultPrice: 90.5 },
+  NATGAS: { id:"NATGAS",label:"Gas Natural",   symbol:"NG=F",    icon:"⬢", sector:"ENERGÍA",     unit:"$/MMBtu",desc:"Gas Henry Hub EEUU", geoPower:88, seasonPeak:"Dic–Feb", supply:"EE.UU. · Rusia · Qatar", color:"#f97316", defaultPrice: 3.23 },
+  COPPER: { id:"COPPER",label:"Cobre",         symbol:"HG=F",    icon:"⬟", sector:"MINERÍA",     unit:"$/lb",   desc:"Metal de transición energética", geoPower:82, seasonPeak:"Mar–May", supply:"Chile · Perú · China", color:"#c2410c", defaultPrice: 6.30 },
   LITHIUM:{ id:"LITHIUM",label:"Litio",        symbol:"LIT",     icon:"⬠", sector:"MINERÍA",     unit:"$/MT",   desc:"Baterías EV y almacenamiento", geoPower:75, seasonPeak:"Abr–Jul", supply:"Australia · Chile · Argentina", color:"#7c3aed", defaultPrice: 11200 },
-  WHEAT:  { id:"WHEAT", label:"Trigo",         symbol:"ZW=F",    icon:"⊛", sector:"AGRICULTURA", unit:"$/bu",   desc:"Cereal granos básico global", geoPower:91, seasonPeak:"May–Jul", supply:"Rusia · EE.UU. · Ucrania", color:"#d97706", defaultPrice: 6.82 },
-  CORN:   { id:"CORN",  label:"Maíz",          symbol:"ZC=F",    icon:"⊙", sector:"AGRICULTURA", unit:"$/bu",   desc:"Cereal multipropósito global", geoPower:72, seasonPeak:"Jun–Ago", supply:"EE.UU. · Brasil · Argentina", color:"#65a30d", defaultPrice: 5.12 },
-  COFFEE: { id:"COFFEE",label:"Café Arábica",  symbol:"KC=F",    icon:"⊕", sector:"SOFTS",       unit:"$/lb",   desc:"Commodity soft mayor mercado", geoPower:68, seasonPeak:"Oct–Dic", supply:"Brasil · Colombia · Vietnam", color:"#92400e", defaultPrice: 2.87 },
-  SOYBEAN:{ id:"SOYBEAN",label:"Soja",         symbol:"ZS=F",    icon:"⊗", sector:"AGRICULTURA", unit:"$/bu",   desc:"Oleaginosa proteica global", geoPower:78, seasonPeak:"Sep–Nov", supply:"Brasil · EE.UU. · Argentina", color:"#15803d", defaultPrice: 12.35 },
+  WHEAT:  { id:"WHEAT", label:"Trigo",         symbol:"ZW=F",    icon:"⊛", sector:"AGRICULTURA", unit:"$/bu",   desc:"Cereal granos básico global", geoPower:91, seasonPeak:"May–Jul", supply:"Rusia · EE.UU. · Ucrania", color:"#d97706", defaultPrice: 645.0 },
+  CORN:   { id:"CORN",  label:"Maíz",          symbol:"ZC=F",    icon:"⊙", sector:"AGRICULTURA", unit:"$/bu",   desc:"Cereal multipropósito global", geoPower:72, seasonPeak:"Jun–Ago", supply:"EE.UU. · Brasil · Argentina", color:"#65a30d", defaultPrice: 450.0 },
+  COFFEE: { id:"COFFEE",label:"Café Arábica",  symbol:"KC=F",    icon:"⊕", sector:"SOFTS",       unit:"$/lb",   desc:"Commodity soft mayor mercado", geoPower:68, seasonPeak:"Oct–Dic", supply:"Brasil · Colombia · Vietnam", color:"#92400e", defaultPrice: 270.0 },
+  SOYBEAN:{ id:"SOYBEAN",label:"Soja",         symbol:"ZS=F",    icon:"⊗", sector:"AGRICULTURA", unit:"$/bu",   desc:"Oleaginosa proteica global", geoPower:78, seasonPeak:"Sep–Nov", supply:"Brasil · EE.UU. · Argentina", color:"#15803d", defaultPrice: 1185.0 },
 };
 
 const SECTORS = ["TODOS", "METALES", "ENERGÍA", "MINERÍA", "AGRICULTURA", "SOFTS"];
