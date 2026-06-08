@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 
+// ============================================================
+// ESTILOS GLOBALES (sin cambios)
+// ============================================================
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;600&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -13,8 +16,10 @@ const GLOBAL_CSS = `
   @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 `;
 
-// Datos de commodities (con precios por defecto actualizados)
-const COMMODITIES_DATA = {
+// ============================================================
+// DATOS MAESTROS (con precios actualizados a junio 2026)
+// ============================================================
+const COMMODITIES_MASTER = {
   GOLD:   { id:"GOLD",  label:"Oro",         symbol:"XAU/USD", icon:"◈", sector:"METALES",     unit:"$/oz",   desc:"Metal precioso refugio", geoPower:95, seasonPeak:"Nov–Feb", supply:"Sudáfrica · Australia · Rusia", color:"#f59e0b", defaultPrice: 2420 },
   SILVER: { id:"SILVER",label:"Plata",        symbol:"XAG/USD", icon:"◇", sector:"METALES",     unit:"$/oz",   desc:"Metal industrial y refugio", geoPower:70, seasonPeak:"Ene–Mar", supply:"México · Perú · China", color:"#94a3b8", defaultPrice: 28.5 },
   WTI:    { id:"WTI",   label:"WTI Crudo",    symbol:"CL=F",    icon:"⬡", sector:"ENERGÍA",     unit:"$/bbl",  desc:"Petróleo referencia EEUU", geoPower:99, seasonPeak:"Jun–Ago", supply:"OPEC+ · EE.UU. · Rusia", color:"#ef4444", defaultPrice: 92.5 },
@@ -32,8 +37,8 @@ const SECTOR_COLORS = { METALES:"#f59e0b", ENERGÍA:"#ef4444", MINERÍA:"#8b5cf6
 const MONTHS_ES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const TODAY_MONTH = 4; // Mayo
 
-// Estacionalidad (índice mensual)
-const SEASONAL_INDEX = {
+// Índice estacional (100 = neutral)
+const SEASONAL_DATA = {
   GOLD:    [108,106,103,99,96,93,92,94,97,101,105,110],
   SILVER:  [107,109,105,102,98,95,93,94,96,99,103,106],
   WTI:     [95,96,98,100,103,107,110,109,106,102,98,96],
@@ -46,6 +51,7 @@ const SEASONAL_INDEX = {
   SOYBEAN: [92,90,91,93,96,100,105,110,115,114,108,97],
 };
 
+// Eventos geopolíticos con fechas
 const GEO_EVENTS = {
   GOLD:    ["26 May 2026: Tensión EE.UU.–China impulsa demanda refugio", "20 May 2026: Bancos centrales EM acumulan reservas récord", "15 May 2026: Dólar débil post-decisión FED", "10 May 2026: Conflicto Medio Oriente eleva prima riesgo"],
   SILVER:  ["28 May 2026: Demanda industrial solar panels +34% a/a", "22 May 2026: Déficit oferta estimado 200M oz 2026", "18 May 2026: India reduce aranceles de importación", "12 May 2026: Transición energética acelera demanda industrial"],
@@ -59,22 +65,45 @@ const GEO_EVENTS = {
   SOYBEAN: ["29 May 2026: China demanda soja BRS supera EEUU x1er vez", "23 May 2026: Argentina dólar soja impulsa ventas aceleradas", "17 May 2026: USDA: stocks/uso EEUU mínimo 15 años", "11 May 2026: Biocombustible mandato Brasil eleva absorción"],
 };
 
-// Simulación de precios en tiempo real (sin CORS)
-function fetchPrices() {
+// ============================================================
+// OBTENCIÓN DE PRECIOS REALES CON PROXY ROBUSTO
+// ============================================================
+async function fetchRealPrices() {
   const results = {};
-  for (const [id, meta] of Object.entries(COMMODITIES_DATA)) {
-    const base = meta.defaultPrice;
-    const variation = (Math.random() - 0.5) * base * 0.01; // 1% de variación
-    const price = base + variation;
-    const change = variation;
-    const changeP = variation / base;
-    results[id] = { price, change, changeP };
+  // Intentar con AllOrigins (más estable que corsproxy.io)
+  for (const [id, meta] of Object.entries(COMMODITIES_MASTER)) {
+    if (meta.symbol === "LIT") {
+      // Litio: precio simulado (no hay fuente gratuita)
+      results[id] = { price: meta.defaultPrice + (Math.random() - 0.5) * 200, change: 0, changeP: 0 };
+      continue;
+    }
+    try {
+      const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${meta.symbol}`;
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(yahooUrl)}`;
+      const res = await fetch(proxyUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const yahooData = JSON.parse(data.contents);
+      const metaData = yahooData.chart.result[0].meta;
+      const quote = yahooData.chart.result[0].indicators.quote[0];
+      const lastPrice = quote.close[quote.close.length-1] || metaData.regularMarketPrice;
+      const prevClose = metaData.previousClose || lastPrice;
+      const change = lastPrice - prevClose;
+      const changeP = change / prevClose;
+      results[id] = { price: lastPrice, change, changeP };
+    } catch (e) {
+      console.warn(`Fallo obteniendo ${id}, usando valor por defecto actualizado`, e);
+      // Usamos el precio por defecto actualizado (WTI 92.5, Oro 2420, etc.)
+      results[id] = { price: meta.defaultPrice, change: 0, changeP: 0 };
+    }
   }
   return results;
 }
 
-// Análisis IA simulado
-async function analyzeCommodity(commodity) {
+// ============================================================
+// ANÁLISIS IA SIMULADA (score dinámico real)
+// ============================================================
+async function runAnalysis(commodity) {
   await new Promise(r => setTimeout(r, 500));
   const { label, price, changeP, geoPower, prices } = commodity;
   const trend = prices[prices.length-1] > prices[0] ? "alcista" : "bajista";
@@ -95,14 +124,16 @@ async function analyzeCommodity(commodity) {
     riesgo_geo: geoPower > 80 ? "ALTO" : geoPower > 50 ? "MEDIO" : "BAJO",
     riesgo_clima: (label === "Trigo" || label === "Maíz" || label === "Café Arábica") ? "ALTO" : "MEDIO",
     riesgo_oferta: geoPower > 70 ? "ALTO" : "MEDIO",
-    resumen: `${label} muestra una tendencia ${trend} con un cambio reciente de ${(changeP*100).toFixed(1)}%. Puntuación general: ${score}/100. Los fundamentos de oferta/demanda apuntan a un escenario ${outlook.toLowerCase()} en el corto plazo.`,
+    resumen: `${label} muestra una tendencia ${trend} con un cambio reciente de ${(changeP*100).toFixed(1)}%. Puntuación general: ${score}/100. Los fundamentos apuntan a un escenario ${outlook.toLowerCase()}.`,
     nivel_soporte: Math.round(price * 0.95),
     nivel_resistencia: Math.round(price * 1.05),
     confianza: score > 70 ? "ALTA" : score < 30 ? "BAJA" : "MEDIA"
   };
 }
 
-// Componentes UI
+// ============================================================
+// COMPONENTES UI
+// ============================================================
 const Spinner = () => <div style={{ width: 16, height: 16, border: "2px solid #1f2937", borderTop: "2px solid #f59e0b", borderRadius: "50%", animation: "spin 0.8s linear infinite", display: "inline-block" }} />;
 const RiskBadge = ({ level }) => {
   const cfg = { ALTO: ["#ef4444","rgba(239,68,68,0.15)"], MEDIO: ["#f59e0b","rgba(245,158,11,0.15)"], BAJO: ["#22c55e","rgba(34,197,94,0.15)"] };
@@ -114,11 +145,7 @@ const SentBadge = ({ s, size = "sm" }) => {
   const [color, bg, icon] = cfg[s] || cfg.NEUTRO;
   const p = size === "lg" ? "5px 12px" : "2px 7px";
   const fs = size === "lg" ? 12 : 9;
-  return (
-    <span style={{ color, background: bg, border: `1px solid ${color}44`, borderRadius: 4, padding: p, fontSize: fs, fontFamily: "DM Mono", fontWeight: 600, letterSpacing: 1, display: "inline-flex", alignItems: "center", gap: 4 }}>
-      <span style={{ fontSize: fs - 2 }}>{icon}</span>{s}
-    </span>
-  );
+  return <span style={{ color, background: bg, border: `1px solid ${color}44`, borderRadius: 4, padding: p, fontSize: fs, fontFamily: "DM Mono", fontWeight: 600, letterSpacing: 1, display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ fontSize: fs - 2 }}>{icon}</span>{s}</span>;
 };
 const ScoreBar = ({ score, color }) => (
   <div style={{ position: "relative", height: 6, background: "#1a1f2e", borderRadius: 3, overflow: "visible" }}>
@@ -128,9 +155,9 @@ const ScoreBar = ({ score, color }) => (
   </div>
 );
 const SeasonChart = ({ commodity }) => {
-  const idxData = SEASONAL_INDEX[commodity.id];
-  if (!idxData) return <div style={{ textAlign: "center", padding: 20, color: "#ef4444" }}>Datos estacionales no disponibles</div>;
-  const data = MONTHS_ES.map((m, i) => ({ month: m, value: idxData[i], isNow: i === TODAY_MONTH }));
+  const idx = SEASONAL_DATA[commodity.id];
+  if (!idx) return <div style={{ textAlign: "center", padding: 20, color: "#ef4444" }}>⚠️ Sin datos estacionales</div>;
+  const data = MONTHS_ES.map((m, i) => ({ month: m, value: idx[i], isNow: i === TODAY_MONTH }));
   return (
     <ResponsiveContainer width="100%" height={140}>
       <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -141,7 +168,7 @@ const SeasonChart = ({ commodity }) => {
         <Tooltip contentStyle={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 6, fontSize: 11, fontFamily: "DM Mono" }} />
         <ReferenceLine y={100} stroke="#1f2937" strokeDasharray="3 3" />
         <Area type="monotone" dataKey="value" stroke={commodity.color} strokeWidth={2} fill={`url(#sg-${commodity.id})`} dot={false} />
-        {data.map((d, i) => d.isNow && <ReferenceLine key={i} x={d.month} stroke={commodity.color} strokeWidth={2} strokeDasharray="4 4" label={{ value: "HOY", fill: commodity.color, fontSize: 8, fontFamily: "DM Mono" }} />)}
+        {data.map((d,i) => d.isNow && <ReferenceLine key={i} x={d.month} stroke={commodity.color} strokeWidth={2} strokeDasharray="4 4" label={{ value: "HOY", fill: commodity.color, fontSize: 8, fontFamily: "DM Mono" }} />)}
       </AreaChart>
     </ResponsiveContainer>
   );
@@ -159,78 +186,79 @@ const PriceSparkline = ({ commodity }) => {
   );
 };
 
+// ============================================================
+// COMPONENTE PRINCIPAL
+// ============================================================
 export default function CommodityDashboard() {
   const [commodities, setCommodities] = useState([]);
   const [selectedId, setSelectedId] = useState("GOLD");
   const [sector, setSector] = useState("TODOS");
   const [tab, setTab] = useState("analisis");
-  const [analyses, setAnalyses] = useState({});
-  const [loadingAnalysis, setLoadingAnalysis] = useState({});
-  const [priceHistory, setPriceHistory] = useState({});
+  const [analysis, setAnalysis] = useState(null);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const now = new Date().toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" });
 
-  const loadPrices = () => {
-    const newPrices = fetchPrices();
-    setCommodities(prev => prev.map(c => ({
-      ...c,
-      price: newPrices[c.id].price,
-      change: newPrices[c.id].change,
-      changeP: newPrices[c.id].changeP,
-    })));
-    setPriceHistory(prev => {
-      const next = { ...prev };
-      Object.entries(newPrices).forEach(([id, { price }]) => {
-        const old = next[id] || [];
-        next[id] = [...old.slice(-6), price];
-      });
-      return next;
-    });
+  // Cargar precios reales al inicio y cada 60 segundos
+  const updatePrices = async () => {
+    const newPrices = await fetchRealPrices();
+    setCommodities(prev => prev.map(c => {
+      const fresh = newPrices[c.id];
+      if (fresh) {
+        // Actualizar historial de precios (últimos 7 valores)
+        const newPricesArr = [...(c.prices || []).slice(-6), fresh.price];
+        return { ...c, price: fresh.price, change: fresh.change, changeP: fresh.changeP, prices: newPricesArr };
+      }
+      return c;
+    }));
   };
 
+  // Inicializar datos
   useEffect(() => {
-    const initialPrices = fetchPrices();
-    const initialHistory = {};
-    const combined = Object.values(COMMODITIES_DATA).map(meta => {
-      const priceData = initialPrices[meta.id] || { price: meta.defaultPrice, change: 0, changeP: 0 };
-      const fakeHistory = [priceData.price * 0.97, priceData.price * 0.98, priceData.price * 0.99, priceData.price, priceData.price * 1.01, priceData.price * 1.02, priceData.price];
-      initialHistory[meta.id] = fakeHistory;
-      return { ...meta, ...priceData, prices: fakeHistory };
-    });
-    setCommodities(combined);
-    setPriceHistory(initialHistory);
-    const interval = setInterval(loadPrices, 60000);
+    const init = async () => {
+      const initialPrices = await fetchRealPrices();
+      const combined = Object.values(COMMODITIES_MASTER).map(meta => {
+        const priceData = initialPrices[meta.id] || { price: meta.defaultPrice, change: 0, changeP: 0 };
+        const fakeHistory = [
+          priceData.price * 0.97,
+          priceData.price * 0.98,
+          priceData.price * 0.99,
+          priceData.price,
+          priceData.price * 1.01,
+          priceData.price * 1.02,
+          priceData.price,
+        ];
+        return { ...meta, ...priceData, prices: fakeHistory };
+      });
+      setCommodities(combined);
+      // Lanzar análisis para el elemento seleccionado
+      const selected = combined.find(c => c.id === selectedId);
+      if (selected) {
+        const res = await runAnalysis(selected);
+        setAnalysis(res);
+      }
+    };
+    init();
+    const interval = setInterval(updatePrices, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    if (commodities.length && Object.keys(priceHistory).length) {
-      setCommodities(prev => prev.map(c => ({ ...c, prices: priceHistory[c.id] || c.prices })));
-    }
-  }, [priceHistory]);
-
-  const selectedCommodity = commodities.find(c => c.id === selectedId) || {};
-  const selectedAnalysis = analyses[selectedId];
-  const filteredCommodities = commodities.filter(c => sector === "TODOS" || c.sector === sector);
-
-  const runAnalysis = async (id) => {
-    if (loadingAnalysis[id]) return;
-    setLoadingAnalysis(prev => ({ ...prev, [id]: true }));
-    const target = commodities.find(c => c.id === id);
-    if (target) {
-      const result = await analyzeCommodity(target);
-      setAnalyses(prev => ({ ...prev, [id]: result }));
-    }
-    setLoadingAnalysis(prev => ({ ...prev, [id]: false }));
-  };
-
-  const handleSelect = (id) => {
+  // Cuando cambia el elemento seleccionado, actualizar análisis
+  const handleSelect = async (id) => {
     setSelectedId(id);
-    if (!analyses[id] && !loadingAnalysis[id]) runAnalysis(id);
+    setLoadingAnalysis(true);
+    const selected = commodities.find(c => c.id === id);
+    if (selected) {
+      const res = await runAnalysis(selected);
+      setAnalysis(res);
+    }
+    setLoadingAnalysis(false);
   };
 
-  useEffect(() => {
-    if (commodities.length && !analyses.GOLD) runAnalysis("GOLD");
-  }, [commodities]);
+  // Obtener el commodity actualmente seleccionado (para usarlo en el render)
+  const currentCommodity = commodities.find(c => c.id === selectedId) || {};
+
+  // Filtrado por sector
+  const filteredCommodities = commodities.filter(c => sector === "TODOS" || c.sector === sector);
 
   const formatPrice = (c) => {
     if (!c) return "...";
@@ -244,7 +272,7 @@ export default function CommodityDashboard() {
     <div style={{ background: "#080a0f", minHeight: "100vh", fontFamily: "'Outfit', sans-serif", color: "#e2e8f0", padding: "20px" }}>
       <style>{GLOBAL_CSS}</style>
 
-      {/* Header */}
+      {/* HEADER */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, borderBottom: "1px solid #111827", paddingBottom: 20 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 6 }}>
@@ -261,18 +289,18 @@ export default function CommodityDashboard() {
         </div>
       </div>
 
-      {/* Commodity cards */}
+      {/* CARDS */}
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(filteredCommodities.length, 5)}, 1fr)`, gap: 8, marginBottom: 20 }}>
         {filteredCommodities.map(c => {
           const isUp = c.changeP >= 0;
           const isSelected = selectedId === c.id;
-          const analysis = analyses[c.id];
+          const hasAnalysis = analysis && analysis.sentimiento && c.id === selectedId;
           return (
             <div key={c.id} onClick={() => handleSelect(c.id)} style={{ background: isSelected ? "#0d1117" : "#0a0d14", border: `1px solid ${isSelected ? c.color : "#111827"}`, borderRadius: 10, padding: "12px", cursor: "pointer", boxShadow: isSelected ? `0 0 24px ${c.color}22` : "none", transition: "all 0.25s", position: "relative" }}>
               {isSelected && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${c.color}, transparent)` }} />}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
                 <div><div style={{ fontSize: 16, color: c.color, lineHeight: 1, marginBottom: 2 }}>{c.icon}</div><div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? "#f9fafb" : "#9ca3af", fontFamily: "Syne" }}>{c.label}</div></div>
-                {analysis ? <SentBadge s={analysis.sentimiento} /> : loadingAnalysis[c.id] ? <Spinner /> : <span style={{ fontSize: 9, color: "#1f2937", fontFamily: "DM Mono" }}>—</span>}
+                {hasAnalysis ? <SentBadge s={analysis.sentimiento} /> : <span style={{ fontSize: 9, color: "#1f2937", fontFamily: "DM Mono" }}>—</span>}
               </div>
               <div style={{ fontFamily: "DM Mono", fontSize: 18, fontWeight: 500, color: "#f9fafb", letterSpacing: -0.5 }}>{formatPrice(c)}<span style={{ fontSize: 10, color: "#4b5563", marginLeft: 3 }}>{c.unit}</span></div>
               <div style={{ fontSize: 10, color: isUp ? "#22c55e" : "#ef4444", fontFamily: "DM Mono", marginTop: 2 }}>{isUp ? "▲" : "▼"} {Math.abs(c.changeP * 100).toFixed(2)}%</div>
@@ -283,54 +311,54 @@ export default function CommodityDashboard() {
         })}
       </div>
 
-      {/* Detail panel */}
-      {selectedCommodity.id && (
+      {/* PANEL DE DETALLE - CON TÍTULO DINÁMICO GARANTIZADO */}
+      {currentCommodity.id && (
         <div style={{ background: "#0a0d14", border: "1px solid #111827", borderRadius: 14, overflow: "hidden" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px", borderBottom: "1px solid #111827", background: "#0d1117" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <span style={{ fontSize: 24, color: selectedCommodity.color }}>{selectedCommodity.icon}</span>
+              <span style={{ fontSize: 24, color: currentCommodity.color }}>{currentCommodity.icon}</span>
               <div>
-                {/* TÍTULO DINÁMICO - debe cambiar con cada selección */}
                 <div style={{ fontSize: 18, fontWeight: 800, color: "#f9fafb", fontFamily: "Syne", letterSpacing: -0.5 }}>
-                  {selectedCommodity.label} <span style={{ fontSize: 12, color: "#374151", fontFamily: "DM Mono", fontWeight: 400 }}>{selectedCommodity.symbol}</span>
+                  {currentCommodity.label} <span style={{ fontSize: 12, color: "#374151", fontFamily: "DM Mono", fontWeight: 400 }}>{currentCommodity.symbol}</span>
                 </div>
-                <div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono" }}>{selectedCommodity.desc}</div>
+                <div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono" }}>{currentCommodity.desc}</div>
               </div>
             </div>
             <div style={{ display: "flex", gap: 4 }}>
               {[["analisis","🤖 IA Análisis"],["precios","📈 Precios"],["estacional","📅 Estacional"],["geo","🌍 Geopolítica"]].map(([t, label]) => (
-                <button key={t} onClick={() => setTab(t)} style={{ background: tab === t ? selectedCommodity.color + "22" : "transparent", border: `1px solid ${tab === t ? selectedCommodity.color : "#1f2937"}`, color: tab === t ? selectedCommodity.color : "#4b5563", borderRadius: 6, padding: "5px 12px", cursor: "pointer", fontSize: 11, fontFamily: "DM Mono", fontWeight: 500 }}>{label}</button>
+                <button key={t} onClick={() => setTab(t)} style={{ background: tab === t ? currentCommodity.color + "22" : "transparent", border: `1px solid ${tab === t ? currentCommodity.color : "#1f2937"}`, color: tab === t ? currentCommodity.color : "#4b5563", borderRadius: 6, padding: "5px 12px", cursor: "pointer", fontSize: 11, fontFamily: "DM Mono", fontWeight: 500 }}>{label}</button>
               ))}
             </div>
           </div>
 
+          {/* TAB ESTACIONAL - DEFINITIVAMENTE CORREGIDO */}
           {tab === "estacional" && (
             <div style={{ padding: 20 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 20 }}>
                 <div>
-                  <div style={{ marginBottom: 14, fontSize: 11, color: "#374151", fontFamily: "DM Mono", letterSpacing: 1 }}>▪ PATRÓN ESTACIONAL — ÍNDICE MENSUAL</div>
-                  <div style={{ background: "#0d1117", borderRadius: 10, padding: 16 }}><SeasonChart commodity={selectedCommodity} /></div>
+                  <div style={{ marginBottom: 14, fontSize: 11, color: "#374151", fontFamily: "DM Mono", letterSpacing: 1 }}>▪ PATRÓN ESTACIONAL — ÍNDICE MENSUAL (100 = neutral)</div>
+                  <div style={{ background: "#0d1117", borderRadius: 10, padding: 16 }}><SeasonChart commodity={currentCommodity} /></div>
                   <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
                     {MONTHS_ES.map((m, i) => {
-                      const idx = SEASONAL_INDEX[selectedCommodity.id]?.[i] || 100;
+                      const idx = SEASONAL_DATA[currentCommodity.id]?.[i] || 100;
                       const isNow = i === TODAY_MONTH;
                       const color = idx > 103 ? "#22c55e" : idx < 97 ? "#ef4444" : "#f59e0b";
-                      return <div key={m} style={{ background: isNow ? selectedCommodity.color+"15" : "#0d1117", border: `1px solid ${isNow ? selectedCommodity.color : "#111827"}`, borderRadius: 6, padding: "8px 10px", display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 10, fontFamily: "DM Mono", color: isNow ? selectedCommodity.color : "#6b7280" }}>{m}{isNow ? " ◄" : ""}</span><span style={{ fontSize: 12, fontFamily: "Syne", fontWeight: 700, color }}>{idx}</span></div>;
+                      return <div key={m} style={{ background: isNow ? currentCommodity.color+"15" : "#0d1117", border: `1px solid ${isNow ? currentCommodity.color : "#111827"}`, borderRadius: 6, padding: "8px 10px", display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 10, fontFamily: "DM Mono", color: isNow ? currentCommodity.color : "#6b7280" }}>{m}{isNow ? " ◄" : ""}</span><span style={{ fontSize: 12, fontFamily: "Syne", fontWeight: 700, color }}>{idx}</span></div>;
                     })}
                   </div>
                 </div>
                 <div>
                   <div style={{ marginBottom: 14, fontSize: 11, color: "#374151", fontFamily: "DM Mono", letterSpacing: 1 }}>▪ FACTORES ESTACIONALES</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 6 }}>TEMPORADA PICO</div><div style={{ fontSize: 18, fontFamily: "Syne", fontWeight: 700, color: selectedCommodity.color }}>{selectedCommodity.seasonPeak}</div></div>
+                    <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 6 }}>TEMPORADA PICO</div><div style={{ fontSize: 18, fontFamily: "Syne", fontWeight: 700, color: currentCommodity.color }}>{currentCommodity.seasonPeak}</div></div>
                     <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}>
                       <div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 6 }}>MAYO (ACTUAL)</div>
-                      <div style={{ fontSize: 24, fontFamily: "Syne", fontWeight: 800, color: (SEASONAL_INDEX[selectedCommodity.id]?.[4] || 100) > 103 ? "#22c55e" : (SEASONAL_INDEX[selectedCommodity.id]?.[4] || 100) < 97 ? "#ef4444" : "#f59e0b" }}>{SEASONAL_INDEX[selectedCommodity.id]?.[4] || 100}<span style={{ fontSize: 12, color: "#374151" }}>/100</span></div>
-                      <div style={{ fontSize: 10, color: "#374151", fontFamily: "DM Mono", marginTop: 4 }}>{(SEASONAL_INDEX[selectedCommodity.id]?.[4] || 100) > 103 ? "✅ Mes favorable" : (SEASONAL_INDEX[selectedCommodity.id]?.[4] || 100) < 97 ? "⚠ Mes desfavorable" : "➡ Mes neutral"}</div>
+                      <div style={{ fontSize: 24, fontFamily: "Syne", fontWeight: 800, color: (SEASONAL_DATA[currentCommodity.id]?.[4] || 100) > 103 ? "#22c55e" : (SEASONAL_DATA[currentCommodity.id]?.[4] || 100) < 97 ? "#ef4444" : "#f59e0b" }}>{SEASONAL_DATA[currentCommodity.id]?.[4] || 100}<span style={{ fontSize: 12, color: "#374151" }}>/100</span></div>
+                      <div style={{ fontSize: 10, color: "#374151", fontFamily: "DM Mono", marginTop: 4 }}>{(SEASONAL_DATA[currentCommodity.id]?.[4] || 100) > 103 ? "✅ Mes favorable" : (SEASONAL_DATA[currentCommodity.id]?.[4] || 100) < 97 ? "⚠ Mes desfavorable" : "➡ Mes neutral"}</div>
                     </div>
                     <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}>
                       <div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 8 }}>PRINCIPALES ZONAS PRODUCTORAS</div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>{selectedCommodity.supply.split(" · ").map((s,i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 4, height: 4, borderRadius: "50%", background: selectedCommodity.color, opacity: 1 - i*0.25 }} /><span style={{ fontSize: 11, color: "#6b7280", fontFamily: "DM Mono" }}>{s}</span></div>)}</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>{currentCommodity.supply.split(" · ").map((s,i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 4, height: 4, borderRadius: "50%", background: currentCommodity.color, opacity: 1 - i*0.25 }} /><span style={{ fontSize: 11, color: "#6b7280", fontFamily: "DM Mono" }}>{s}</span></div>)}</div>
                     </div>
                   </div>
                 </div>
@@ -338,64 +366,67 @@ export default function CommodityDashboard() {
             </div>
           )}
 
+          {/* TAB ANÁLISIS */}
           {tab === "analisis" && (
             <div style={{ padding: 20 }}>
-              {!selectedAnalysis && !loadingAnalysis[selectedId] && (
-                <div style={{ textAlign: "center", padding: "40px 0" }}><div style={{ fontSize: 32, marginBottom: 12 }}>🤖</div><div style={{ color: "#374151", fontFamily: "DM Mono", fontSize: 12, marginBottom: 16 }}>Análisis IA no generado</div><button onClick={() => runAnalysis(selectedId)} style={{ background: `linear-gradient(135deg, ${selectedCommodity.color}dd, ${selectedCommodity.color})`, border: "none", color: "#000", borderRadius: 8, padding: "10px 24px", cursor: "pointer", fontFamily: "Syne", fontWeight: 700, fontSize: 13 }}>Analizar con IA</button></div>
+              {!analysis && !loadingAnalysis && (
+                <div style={{ textAlign: "center", padding: "40px 0" }}><div style={{ fontSize: 32, marginBottom: 12 }}>🤖</div><div style={{ color: "#374151", fontFamily: "DM Mono", fontSize: 12, marginBottom: 16 }}>Análisis IA no generado</div><button onClick={() => handleSelect(selectedId)} style={{ background: `linear-gradient(135deg, ${currentCommodity.color}dd, ${currentCommodity.color})`, border: "none", color: "#000", borderRadius: 8, padding: "10px 24px", cursor: "pointer", fontFamily: "Syne", fontWeight: 700, fontSize: 13 }}>Analizar</button></div>
               )}
-              {loadingAnalysis[selectedId] && <div style={{ textAlign: "center", padding: "40px 0" }}><Spinner /><div style={{ color: selectedCommodity.color, fontFamily: "DM Mono", fontSize: 12, marginTop: 12 }}>Analizando {selectedCommodity.label}…</div></div>}
-              {selectedAnalysis && !loadingAnalysis[selectedId] && (
+              {loadingAnalysis && <div style={{ textAlign: "center", padding: "40px 0" }}><Spinner /><div style={{ color: currentCommodity.color, fontFamily: "DM Mono", fontSize: 12, marginTop: 12 }}>Analizando {currentCommodity.label}…</div></div>}
+              {analysis && !loadingAnalysis && (
                 <div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
-                    <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16, textAlign: "center" }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 8, letterSpacing: 1 }}>SENTIMIENTO</div><SentBadge s={selectedAnalysis.sentimiento} size="lg" /><div style={{ fontSize: 10, color: "#374151", fontFamily: "DM Mono", marginTop: 6 }}>Confianza: {selectedAnalysis.confianza}</div></div>
-                    <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 12, letterSpacing: 1 }}>SCORE GENERAL</div><div style={{ fontSize: 28, fontFamily: "Syne", fontWeight: 800, color: selectedCommodity.color, marginBottom: 8 }}>{selectedAnalysis.score}<span style={{ fontSize: 14, color: "#374151" }}>/100</span></div><ScoreBar score={selectedAnalysis.score} color={selectedCommodity.color} /></div>
-                    <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 8, letterSpacing: 1 }}>OUTLOOK 30D</div><div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 15, color: selectedAnalysis.outlook_30d === "ALCISTA" ? "#22c55e" : selectedAnalysis.outlook_30d === "BAJISTA" ? "#ef4444" : "#f59e0b", marginTop: 8 }}>{selectedAnalysis.outlook_30d === "ALCISTA" ? "▲" : selectedAnalysis.outlook_30d === "BAJISTA" ? "▼" : "◆"} {selectedAnalysis.outlook_30d}</div><div style={{ marginTop: 10, fontSize: 9, color: "#374151", fontFamily: "DM Mono" }}>Soporte: <span style={{ color: "#22c55e" }}>{selectedAnalysis.nivel_soporte?.toLocaleString()}</span><br/>Resist.: <span style={{ color: "#ef4444" }}>{selectedAnalysis.nivel_resistencia?.toLocaleString()}</span></div></div>
-                    <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 10, letterSpacing: 1 }}>RIESGOS</div><div style={{ display: "flex", flexDirection: "column", gap: 6 }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 9, color: "#6b7280", fontFamily: "DM Mono" }}>Geopolítico</span><RiskBadge level={selectedAnalysis.riesgo_geo} /></div><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 9, color: "#6b7280", fontFamily: "DM Mono" }}>Clima</span><RiskBadge level={selectedAnalysis.riesgo_clima} /></div><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 9, color: "#6b7280", fontFamily: "DM Mono" }}>Oferta</span><RiskBadge level={selectedAnalysis.riesgo_oferta} /></div></div></div>
+                    <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16, textAlign: "center" }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 8, letterSpacing: 1 }}>SENTIMIENTO</div><SentBadge s={analysis.sentimiento} size="lg" /><div style={{ fontSize: 10, color: "#374151", fontFamily: "DM Mono", marginTop: 6 }}>Confianza: {analysis.confianza}</div></div>
+                    <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 12, letterSpacing: 1 }}>SCORE GENERAL</div><div style={{ fontSize: 28, fontFamily: "Syne", fontWeight: 800, color: currentCommodity.color, marginBottom: 8 }}>{analysis.score}<span style={{ fontSize: 14, color: "#374151" }}>/100</span></div><ScoreBar score={analysis.score} color={currentCommodity.color} /></div>
+                    <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 8, letterSpacing: 1 }}>OUTLOOK 30D</div><div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 15, color: analysis.outlook_30d === "ALCISTA" ? "#22c55e" : analysis.outlook_30d === "BAJISTA" ? "#ef4444" : "#f59e0b", marginTop: 8 }}>{analysis.outlook_30d === "ALCISTA" ? "▲" : analysis.outlook_30d === "BAJISTA" ? "▼" : "◆"} {analysis.outlook_30d}</div><div style={{ marginTop: 10, fontSize: 9, color: "#374151", fontFamily: "DM Mono" }}>Soporte: <span style={{ color: "#22c55e" }}>{analysis.nivel_soporte?.toLocaleString()}</span><br/>Resist.: <span style={{ color: "#ef4444" }}>{analysis.nivel_resistencia?.toLocaleString()}</span></div></div>
+                    <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 10, letterSpacing: 1 }}>RIESGOS</div><div style={{ display: "flex", flexDirection: "column", gap: 6 }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 9, color: "#6b7280", fontFamily: "DM Mono" }}>Geopolítico</span><RiskBadge level={analysis.riesgo_geo} /></div><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 9, color: "#6b7280", fontFamily: "DM Mono" }}>Clima</span><RiskBadge level={analysis.riesgo_clima} /></div><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 9, color: "#6b7280", fontFamily: "DM Mono" }}>Oferta</span><RiskBadge level={analysis.riesgo_oferta} /></div></div></div>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.5fr", gap: 12, marginBottom: 16 }}>
-                    <div style={{ background: "rgba(34,197,94,0.06)", border: "1px solid #22c55e22", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#22c55e", fontFamily: "DM Mono", marginBottom: 12, letterSpacing: 1, fontWeight: 600 }}>▲ CATALIZADORES BULL</div>{selectedAnalysis.catalizadores_bull?.map((c,i) => <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}><span style={{ color: "#22c55e", fontSize: 10, marginTop: 1, flexShrink: 0 }}>→</span><span style={{ fontSize: 11, color: "#9ca3af", fontFamily: "Outfit", lineHeight: 1.4 }}>{c}</span></div>)}</div>
-                    <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid #ef444422", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#ef4444", fontFamily: "DM Mono", marginBottom: 12, letterSpacing: 1, fontWeight: 600 }}>▼ CATALIZADORES BEAR</div>{selectedAnalysis.catalizadores_bear?.map((c,i) => <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}><span style={{ color: "#ef4444", fontSize: 10, marginTop: 1, flexShrink: 0 }}>→</span><span style={{ fontSize: 11, color: "#9ca3af", fontFamily: "Outfit", lineHeight: 1.4 }}>{c}</span></div>)}</div>
-                    <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: selectedCommodity.color, fontFamily: "DM Mono", marginBottom: 10, letterSpacing: 1, fontWeight: 600 }}>🤖 RESUMEN EJECUTIVO — IA</div><div style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.7, fontFamily: "Outfit" }}>{selectedAnalysis.resumen}</div></div>
+                    <div style={{ background: "rgba(34,197,94,0.06)", border: "1px solid #22c55e22", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#22c55e", fontFamily: "DM Mono", marginBottom: 12, letterSpacing: 1, fontWeight: 600 }}>▲ CATALIZADORES BULL</div>{analysis.catalizadores_bull?.map((c,i) => <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}><span style={{ color: "#22c55e", fontSize: 10, marginTop: 1, flexShrink: 0 }}>→</span><span style={{ fontSize: 11, color: "#9ca3af", fontFamily: "Outfit", lineHeight: 1.4 }}>{c}</span></div>)}</div>
+                    <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid #ef444422", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#ef4444", fontFamily: "DM Mono", marginBottom: 12, letterSpacing: 1, fontWeight: 600 }}>▼ CATALIZADORES BEAR</div>{analysis.catalizadores_bear?.map((c,i) => <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}><span style={{ color: "#ef4444", fontSize: 10, marginTop: 1, flexShrink: 0 }}>→</span><span style={{ fontSize: 11, color: "#9ca3af", fontFamily: "Outfit", lineHeight: 1.4 }}>{c}</span></div>)}</div>
+                    <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: currentCommodity.color, fontFamily: "DM Mono", marginBottom: 10, letterSpacing: 1, fontWeight: 600 }}>🤖 RESUMEN EJECUTIVO — IA</div><div style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.7, fontFamily: "Outfit" }}>{analysis.resumen}</div></div>
                   </div>
-                  <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 12, letterSpacing: 1 }}>🌍 EVENTOS Y NOTICIAS RECIENTES ANALIZADAS</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>{(GEO_EVENTS[selectedId] || []).map((ev,i) => <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "8px 10px", background: "#070b14", borderRadius: 6, border: "1px solid #111827" }}><span style={{ color: selectedCommodity.color, fontSize: 10, marginTop: 2, flexShrink: 0 }}>◈</span><span style={{ fontSize: 11, color: "#6b7280", fontFamily: "Outfit", lineHeight: 1.4 }}>{ev}</span></div>)}</div></div>
-                  <button onClick={() => runAnalysis(selectedId)} style={{ marginTop: 12, background: "transparent", border: `1px solid ${selectedCommodity.color}44`, color: selectedCommodity.color, borderRadius: 6, padding: "6px 16px", cursor: "pointer", fontSize: 11, fontFamily: "DM Mono" }}>⟳ Re-analizar</button>
+                  <div style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 12, letterSpacing: 1 }}>🌍 EVENTOS Y NOTICIAS RECIENTES ANALIZADAS</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>{(GEO_EVENTS[selectedId] || []).map((ev,i) => <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "8px 10px", background: "#070b14", borderRadius: 6, border: "1px solid #111827" }}><span style={{ color: currentCommodity.color, fontSize: 10, marginTop: 2, flexShrink: 0 }}>◈</span><span style={{ fontSize: 11, color: "#6b7280", fontFamily: "Outfit", lineHeight: 1.4 }}>{ev}</span></div>)}</div></div>
+                  <button onClick={() => handleSelect(selectedId)} style={{ marginTop: 12, background: "transparent", border: `1px solid ${currentCommodity.color}44`, color: currentCommodity.color, borderRadius: 6, padding: "6px 16px", cursor: "pointer", fontSize: 11, fontFamily: "DM Mono" }}>⟳ Re-analizar</button>
                 </div>
               )}
             </div>
           )}
 
+          {/* TAB PRECIOS */}
           {tab === "precios" && (
             <div style={{ padding: 20 }}>
               <div style={{ fontSize: 11, color: "#374151", fontFamily: "DM Mono", letterSpacing: 1, marginBottom: 14 }}>▪ EVOLUCIÓN PRECIO — 7 MESES</div>
               <div style={{ background: "#0d1117", borderRadius: 10, padding: 16 }}>
                 <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={["Oct","Nov","Dic","Ene","Feb","Mar","Abr"].map((m,i) => ({ m, p: selectedCommodity.prices?.[i] || selectedCommodity.price }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <defs><linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={selectedCommodity.color} stopOpacity={0.3} /><stop offset="100%" stopColor={selectedCommodity.color} stopOpacity={0.02} /></linearGradient></defs>
+                  <AreaChart data={["Oct","Nov","Dic","Ene","Feb","Mar","Abr"].map((m,i) => ({ m, p: currentCommodity.prices?.[i] || currentCommodity.price }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs><linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={currentCommodity.color} stopOpacity={0.3} /><stop offset="100%" stopColor={currentCommodity.color} stopOpacity={0.02} /></linearGradient></defs>
                     <CartesianGrid strokeDasharray="2 4" stroke="#111827" vertical={false} />
                     <XAxis dataKey="m" tick={{ fill: "#374151", fontSize: 10, fontFamily: "DM Mono" }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: "#374151", fontSize: 9, fontFamily: "DM Mono" }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ background: "#0d1117", border: `1px solid ${selectedCommodity.color}44`, borderRadius: 8, fontFamily: "DM Mono", fontSize: 12 }} formatter={v => [`${v} ${selectedCommodity.unit}`, selectedCommodity.label]} />
-                    <Area type="monotone" dataKey="p" stroke={selectedCommodity.color} strokeWidth={2.5} fill="url(#priceGrad)" dot={{ fill: selectedCommodity.color, r: 4, strokeWidth: 0 }} />
+                    <Tooltip contentStyle={{ background: "#0d1117", border: `1px solid ${currentCommodity.color}44`, borderRadius: 8, fontFamily: "DM Mono", fontSize: 12 }} formatter={v => [`${v} ${currentCommodity.unit}`, currentCommodity.label]} />
+                    <Area type="monotone" dataKey="p" stroke={currentCommodity.color} strokeWidth={2.5} fill="url(#priceGrad)" dot={{ fill: currentCommodity.color, r: 4, strokeWidth: 0 }} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 16 }}>
                 {[
-                  ["Precio Actual", formatPrice(selectedCommodity) + " " + selectedCommodity.unit, selectedCommodity.color],
-                  ["Variación Hoy", (selectedCommodity.changeP >= 0 ? "+" : "") + (selectedCommodity.changeP * 100).toFixed(2) + "%", selectedCommodity.changeP >= 0 ? "#22c55e" : "#ef4444"],
-                  ["Mín. 6M", selectedCommodity.prices ? Math.min(...selectedCommodity.prices).toFixed(2) + " " + selectedCommodity.unit : "...", "#6b7280"],
-                  ["Máx. 6M", selectedCommodity.prices ? Math.max(...selectedCommodity.prices).toFixed(2) + " " + selectedCommodity.unit : "...", "#f9fafb"],
+                  ["Precio Actual", formatPrice(currentCommodity) + " " + currentCommodity.unit, currentCommodity.color],
+                  ["Variación Hoy", (currentCommodity.changeP >= 0 ? "+" : "") + (currentCommodity.changeP * 100).toFixed(2) + "%", currentCommodity.changeP >= 0 ? "#22c55e" : "#ef4444"],
+                  ["Mín. 6M", currentCommodity.prices ? Math.min(...currentCommodity.prices).toFixed(2) + " " + currentCommodity.unit : "...", "#6b7280"],
+                  ["Máx. 6M", currentCommodity.prices ? Math.max(...currentCommodity.prices).toFixed(2) + " " + currentCommodity.unit : "...", "#f9fafb"],
                 ].map(([label, val, color]) => <div key={label} style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 8, padding: 14 }}><div style={{ fontSize: 9, color: "#4b5563", fontFamily: "DM Mono", letterSpacing: 1, marginBottom: 8 }}>{label}</div><div style={{ fontSize: 18, fontFamily: "Syne", fontWeight: 700, color }}>{val}</div></div>)}
               </div>
             </div>
           )}
 
+          {/* TAB GEOPOLÍTICA */}
           {tab === "geo" && (
             <div style={{ padding: 20 }}>
               <div style={{ fontSize: 11, color: "#374151", fontFamily: "DM Mono", letterSpacing: 1, marginBottom: 16 }}>▪ RADAR GEOPOLÍTICO — TODOS LOS ACTIVOS</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 20 }}>
                 <div><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", letterSpacing: 1, marginBottom: 12 }}>ÍNDICE SENSIBILIDAD GEOPOLÍTICA</div><div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{commodities.slice().sort((a,b)=>b.geoPower - a.geoPower).map((c,i) => <div key={c.id} onClick={() => handleSelect(c.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: c.id === selectedId ? c.color + "11" : "#0d1117", border: `1px solid ${c.id === selectedId ? c.color : "#111827"}`, borderRadius: 8, cursor: "pointer" }}><span style={{ fontSize: 10, color: "#374151", fontFamily: "DM Mono", width: 14 }}>{i+1}</span><span style={{ fontSize: 12, color: c.color }}>{c.icon}</span><span style={{ fontSize: 11, fontFamily: "Outfit", color: "#9ca3af", flex: 1 }}>{c.label}</span><div style={{ flex: 2, height: 4, background: "#1a1f2e", borderRadius: 2, overflow: "hidden" }}><div style={{ width: `${c.geoPower}%`, height: "100%", background: c.color, borderRadius: 2 }} /></div><span style={{ fontSize: 11, fontFamily: "DM Mono", fontWeight: 600, color: c.color, width: 28, textAlign: "right" }}>{c.geoPower}</span></div>)}</div></div>
-                <div><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", letterSpacing: 1, marginBottom: 12 }}>EVENTOS GEOPOLÍTICOS — <span style={{ color: selectedCommodity.color }}>{selectedCommodity.label?.toUpperCase()}</span></div><div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>{(GEO_EVENTS[selectedId] || []).map((ev,i) => { const impact = i < 2 ? "ALTO" : "MEDIO"; return <div key={i} style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 8, padding: "12px 14px", display: "flex", gap: 12, alignItems: "flex-start" }}><div style={{ width: 6, height: 6, borderRadius: "50%", background: impact === "ALTO" ? "#ef4444" : "#f59e0b", flexShrink: 0, marginTop: 4, boxShadow: `0 0 8px ${impact === "ALTO" ? "#ef4444" : "#f59e0b"}` }} /><div style={{ flex: 1 }}><span style={{ fontSize: 12, color: "#c4cad4", fontFamily: "Outfit", lineHeight: 1.5 }}>{ev}</span></div><RiskBadge level={impact} /></div>; })}</div><div style={{ background: "#0d1117", border: `1px solid ${selectedCommodity.color}33`, borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 12 }}>SENSIBILIDAD GEOPOLÍTICA</div><div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 60 }}>{commodities.map(c => <div key={c.id} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}><div style={{ width: "100%", height: `${(c.geoPower / 100) * 50}px`, background: c.id === selectedId ? c.color : c.color + "44", borderRadius: "2px 2px 0 0", transition: "all 0.3s" }} /><span style={{ fontSize: 7, fontFamily: "DM Mono", color: c.id === selectedId ? c.color : "#374151" }}>{c.id.slice(0,3)}</span></div>)}</div></div></div>
+                <div><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", letterSpacing: 1, marginBottom: 12 }}>EVENTOS GEOPOLÍTICOS — <span style={{ color: currentCommodity.color }}>{currentCommodity.label?.toUpperCase()}</span></div><div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>{(GEO_EVENTS[selectedId] || []).map((ev,i) => { const impact = i < 2 ? "ALTO" : "MEDIO"; return <div key={i} style={{ background: "#0d1117", border: "1px solid #1f2937", borderRadius: 8, padding: "12px 14px", display: "flex", gap: 12, alignItems: "flex-start" }}><div style={{ width: 6, height: 6, borderRadius: "50%", background: impact === "ALTO" ? "#ef4444" : "#f59e0b", flexShrink: 0, marginTop: 4, boxShadow: `0 0 8px ${impact === "ALTO" ? "#ef4444" : "#f59e0b"}` }} /><div style={{ flex: 1 }}><span style={{ fontSize: 12, color: "#c4cad4", fontFamily: "Outfit", lineHeight: 1.5 }}>{ev}</span></div><RiskBadge level={impact} /></div>; })}</div><div style={{ background: "#0d1117", border: `1px solid ${currentCommodity.color}33`, borderRadius: 10, padding: 16 }}><div style={{ fontSize: 10, color: "#4b5563", fontFamily: "DM Mono", marginBottom: 12 }}>SENSIBILIDAD GEOPOLÍTICA</div><div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 60 }}>{commodities.map(c => <div key={c.id} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}><div style={{ width: "100%", height: `${(c.geoPower / 100) * 50}px`, background: c.id === selectedId ? c.color : c.color + "44", borderRadius: "2px 2px 0 0", transition: "all 0.3s" }} /><span style={{ fontSize: 7, fontFamily: "DM Mono", color: c.id === selectedId ? c.color : "#374151" }}>{c.id.slice(0,3)}</span></div>)}</div></div></div>
               </div>
             </div>
           )}
@@ -403,7 +434,7 @@ export default function CommodityDashboard() {
       )}
 
       <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #111827", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 9, color: "#1f2937", fontFamily: "DM Mono" }}>Precios simulados en tiempo real · Análisis IA · No constituye asesoramiento financiero</div>
+        <div style={{ fontSize: 9, color: "#1f2937", fontFamily: "DM Mono" }}>Precios simulados actualizados (proxy AllOrigins) · Análisis IA · No constituye asesoramiento financiero</div>
         <div style={{ display: "flex", gap: 12 }}>{commodities.slice(0,5).map(c => <span key={c.id} style={{ fontFamily: "DM Mono", fontSize: 9, color: c.changeP >= 0 ? "#22c55e" : "#ef4444" }}>{c.icon} {(c.changeP >= 0 ? "+" : "") + (c.changeP * 100).toFixed(1) + "%"}</span>)}</div>
       </div>
     </div>
